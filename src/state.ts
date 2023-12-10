@@ -1,17 +1,21 @@
 import { RollupState, STF } from "@stackr/stackr-js/execution";
-import { ethers } from "ethers";
+import { ethers, keccak256, toUtf8Bytes } from "ethers";
+import { Conversations, Message } from "./types";
 
-export type StateVariable = number;
+export type StateVariable = {
+  conversation: Message[]
+};
 
 interface StateTransport {
   currentCount: StateVariable;
 }
 
 export interface CounterActionInput {
-  type: "increment" | "decrement";
+  type: "continueStory";
+  message: Message
 }
 
-export class CounterRollup extends RollupState<StateVariable, StateTransport> {
+export class StoryWebRollup extends RollupState<StateVariable, StateTransport> {
   constructor(count: StateVariable) {
     super(count);
   }
@@ -25,21 +29,18 @@ export class CounterRollup extends RollupState<StateVariable, StateTransport> {
   }
 
   calculateRoot(): ethers.BytesLike {
-    return ethers.solidityPackedKeccak256(
-      ["uint256"],
-      [this.transport.currentCount]
-    );
+    return keccak256(toUtf8Bytes(JSON.stringify(this.transport.currentCount)));
   }
 }
 
-export const counterSTF: STF<CounterRollup, CounterActionInput> = {
-  identifier: "counterSTF",
+export const continueStorySTF: STF<StoryWebRollup, CounterActionInput> = {
+  identifier: "continueStorySTF",
 
-  apply(inputs: CounterActionInput, state: CounterRollup): void {
+  apply(inputs: CounterActionInput, state: StoryWebRollup): void {
     let newState = state.getState();
-    if (inputs.type === "increment") {
-      newState += 1;
-    } else if (inputs.type === "decrement") {
+    if (inputs.type === "continueStory") {
+      newState.conversation.push(inputs.message)
+    } else {
       throw new Error("Not implemented");
     }
     state.transport.currentCount = newState;

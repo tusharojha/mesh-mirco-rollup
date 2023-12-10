@@ -4,9 +4,13 @@ import { ActionSchema } from "@stackr/stackr-js";
 
 const actionSchemaType = {
   type: "String",
+  message: {
+    role: "String",
+    content: "String"
+  }
 };
 
-const actionInput = new ActionSchema("update-counter", actionSchemaType);
+const actionInput = new ActionSchema("continueStory", actionSchemaType);
 
 const getRandomValue = (array: any[]) => {
   return array[Math.floor(Math.random() * array.length)];
@@ -16,7 +20,13 @@ const getData = async () => {
   const wallet = ethers.Wallet.createRandom();
 
   const data = {
-    type: getRandomValue(["increment", "decrement"]),
+    app_id: "102",
+    app_inbox: "0x297d4631ac53edd1b7b64b6cacd784a10340d40f",
+    type: 'continueStory',
+    message: {
+      role: getRandomValue(["assistant", "user"]),
+      content: getRandomValue(["Hi", "there!!"])
+    }
   };
 
   const sign = await wallet.signTypedData(
@@ -45,6 +55,7 @@ const run = async () => {
     body: payload,
     headers: {
       "Content-Type": "application/json",
+      "x-token": "abc123"
     },
   });
 
